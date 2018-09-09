@@ -2,39 +2,55 @@
 #include <MFRC522.h>
 #include <Servo.h>
 #include <Keypad.h>
- const byte ROWS = 4; //four rows
-  const byte COLS = 3; //three columns
-  char keys[ROWS][COLS] =
- {
-  {'1','2','3'},
-  {'4','5','6'},
-  {'7','8','9'},
-  {'*','0','#'}
-  }; 
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
+
+//Keypad Pins
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //three columns
+char keys[ROWS][COLS] =
+{
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+}; 
 byte rowPins[ROWS] = {
-  19, 18, 17, 16}; //connect to the row pinouts of the keypad
+  17, 16, 15, 14}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {
-  15, 14, 5}; // connect to the column pinouts of the keypad 
+  6, 5, 4, 3}; // connect to the column pinouts of the keypad 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
+//RFID Pins
 #define SS_PIN 10
 #define RST_PIN 9
-MFRC522 mfrc522(SS_PIN, RST_PIN);   
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+
+//Servo code
 Servo lockerservo;
-char* lockercode = "230500";
-char* emergencycode = "151723";
+char* lockercode = "111111";
+char* emergencycode = "123456";
 int position = 0;
 
+//Relay Pin
+#define RELAY_PIN 7
  
 void setup() 
 {
   Serial.begin(9600);   // Initiate a serial communication
   SPI.begin();      // Initiate  SPI bus
   mfrc522.PCD_Init();   // Initiate MFRC522
+  pinMode(RELAY_PIN, OUTPUT); // Initiate Relay
   lockerservo.attach(4);
   position = 0;
   Serial.println("Welcome to Keypad Unlock");
-
+  lcd.begin(16, 2);    // initialize the LCD
+  lcd.backlight();    // Turn on the blacklight and print a message
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("*** Welcome! ***");
 }
 void loop() 
 {
@@ -100,19 +116,34 @@ void RFID(){
   }
   Serial.println(" ");
   content.toUpperCase();
-  if (content.substring(1) == "40 11 9F A5" || content.substring(1) == "75 41 25 D9")
+  if (content.substring(1) == "D6 64 75 63" /*|| content.substring(1) == "75 41 25 D9"*/)
   {
     Serial.println("Access granted");
-    lockerservo.write(180);
-    delay(20000);
-    lockerservo.write(90);
-    delay(3000);
+    lcd.clear();
+    lcd.setCursor(1, 0);
+    lcd.print("*** Access ***");
+    lcd.setCursor(4, 1);
+    lcd.print("Granted!");
+    digitalWrite(RELAY_PIN, HIGH);
+    delay(5000);
+    digitalWrite(RELAY_PIN, LOW);
+    delay(500);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("*** Welcome! ***");
   }
  
  else   {
     Serial.println("Access denied");
+    lcd.clear();
+    lcd.setCursor(1, 0);
+    lcd.print("*** Access ***");
+    lcd.setCursor(5, 1);
+    lcd.print("Denied");
     delay(3000);
+    lcd.clear();
   }
+  delay(3000);
 }
 }
 
