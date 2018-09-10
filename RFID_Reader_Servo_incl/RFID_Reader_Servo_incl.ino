@@ -28,7 +28,7 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 #define RST_PIN 9
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-//Servo code
+//Locker code
 Servo lockerservo;
 char* lockercode = "111111";
 char* emergencycode = "123456";
@@ -79,9 +79,9 @@ void loop()
     position ++;
     Serial.println("Please enter next key");
     if(position == 6){
-    lockerservo.write(180);
+    digitalWrite(RELAY_PIN, HIGH);
     delay(20000);
-    lockerservo.write(90);
+    digitalWrite(RELAY_PIN, LOW);
     position =0;
     
   }
